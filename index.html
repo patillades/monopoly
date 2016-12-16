@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monopoly</title>
+
+    <style>
+        /* http://meyerweb.com/eric/tools/css/reset/
+           v2.0 | 20110126
+           License: none (public domain)
+        */
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed,
+        figure, figcaption, footer, header, hgroup,
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        /* HTML5 display-role reset for older browsers */
+        article, aside, details, figcaption, figure,
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1;
+        }
+        ol, ul {
+            list-style: none;
+        }
+        blockquote, q {
+            quotes: none;
+        }
+        blockquote:before, blockquote:after,
+        q:before, q:after {
+            content: '';
+            content: none;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        /* monopoly css */
+        #board {
+            border-collapse: collapse;
+            display: table;
+            margin: 0 auto;
+        }
+
+        .row {
+            display: table-row;
+        }
+
+        .cell {
+            border: 1px solid;
+            display: table-cell;
+        }
+
+        .cell--empty {
+            border: 0;
+        }
+
+        .cell__container {
+            box-sizing: border-box;
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .cell__content {
+            text-align: center;
+            word-wrap: break-word;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .cell__container--right .cell__content {
+            padding-right: 20px;
+        }
+
+        .cell__container--left .cell__content {
+            padding-left: 20px;
+        }
+
+        .colour {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+        }
+
+        .cell__container--right .colour {
+            left: auto;
+            right: 0;
+            width: 20px;
+            height: 100%;
+        }
+
+        .cell__container--top .colour {
+            top: auto;
+            bottom: 0;
+        }
+
+        .cell__container--left .colour {
+            width: 20px;
+            height: 100%;
+        }
+
+        .player {
+            border-radius: 5px;
+            box-shadow: 0 0 1px;
+            font-size: 14px;
+            opacity: .7;
+            padding: 5px 10px;
+            position: absolute;
+            left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="board"></div>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+        integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+        crossorigin="anonymous"></script>
+
+    <script>
+        /**
+         * Generate a boardgame cell object
+         *
+         * @param {number} id
+         * @param {string} name
+         * @param {number} [price]
+         * @param {string} [colour]
+         * @return {{id: number, name: string, price: number|undefined, colour: string|undefined}}
+         */
+        function cell(id, name, price, colour) {
+            return { id, name, price, colour };
+        }
+
+        // array of the boardgame cells and their properties
+        const cells = [
+            ['Go (Collect £200 salary)'],
+            ['Old Kent Road', 60, 'brown'],
+            ['Community Chest'],
+            ['Whitechapel Road', 60, 'brown'],
+            ['Income Tax'],
+            [`King's Cross Station`, 200],
+            ['The Angel Islington', 100, 'lightblue'],
+            ['Chance'],
+            ['Euston Road', 100, 'lightblue'],
+            ['Pentonville Road', 120, 'lightblue'],
+            ['In Jail/Just Visiting'],
+            ['Pall Mall', 140, 'pink'],
+            ['Electric Company', 150],
+            ['Whitehall', 140, 'pink'],
+            ['Northumber&shy;land Avenue', 160, 'pink'],
+            ['Marylebone Station', 200],
+            ['Bow Street', 180, 'orange'],
+            ['Community Chest'],
+            ['Marlborough Street', 180, 'orange'],
+            ['Vine Street', 200, 'orange'],
+            ['Free Parking'],
+            ['Strand', 220, 'red'],
+            ['Chance'],
+            ['Fleet Street', 220, 'red'],
+            ['Trafalgar Square', 240, 'red'],
+            ['Fenchurch St Station', 200],
+            ['Leicester Square', 260, 'yellow'],
+            ['Coventry Street', 260, 'yellow'],
+            ['Water Works', 150],
+            ['Piccadilly', 280, 'yellow'],
+            ['Go To Jail'],
+            ['Regent Street', 300, 'green'],
+            ['Oxford Street', 300, 'green'],
+            ['Community Chest'],
+            ['Bond Street', 320, 'green'],
+            ['Liverpool Street Station', 200],
+            ['Chance'],
+            ['Park Lane', 350, 'darkblue'],
+            ['Super Tax'],
+            ['Mayfair', 300, 'darkblue'],
+        ].map((el, i) => cell.bind(null, i).apply(null, el));
+
+        /**
+         * Get a slice of the cells array
+         *
+         * @param {number} from
+         * @param {number} to
+         * @return {Array}
+         */
+        function getCells(from, to) {
+            return cells.slice(from, to + 1);
+        }
+
+        /**
+         * Get the cells on opposite sides of the board
+         *
+         * @param {number} left
+         * @param {number} right
+         * @return {Array}
+         */
+        function getOppositeCells(left, right) {
+            return [
+                cells[left],
+                null, null, null, null, null, null, null, null, null,
+                cells[right],
+            ];
+        }
+
+        // build the boardgame rows
+        const layout = [getCells(20, 30)];
+
+        for (let i = 1; i <= 9; i++) {
+            layout.push(getOppositeCells(20 - i, 30 + i));
+        }
+
+        layout.push(getCells(0, 10).reverse());
+
+        // build the boardgame element
+        const $board = $('#board');
+
+        layout.forEach((row) => {
+            const rowDiv = $('<div/>').addClass('row');
+
+            row.forEach((cell) => {
+                const cellDiv = $('<div/>').addClass('cell');
+
+                if (!cell) {
+                    rowDiv.append(cellDiv.addClass('cell--empty'));
+
+                    return;
+                }
+
+                cellDiv.attr('id', `cell_${cell.id}`);
+
+                const container = $('<div/>').addClass('cell__container');
+
+                var content = $('<div/>').addClass('cell__content');
+
+                content.append($('<p/>').html(cell.name));
+
+                if (cell.price) {
+                    content.append($('<p/>').html(`&pound; ${cell.price}`));
+                }
+
+                if (cell.colour) {
+                    if (cell.id >= 10 && cell.id <= 19) {
+                        container.addClass('cell__container--right');
+                    } else if (cell.id >= 20 && cell.id <= 29) {
+                        container.addClass('cell__container--top');
+                    } else if (cell.id >= 30) {
+                        container.addClass('cell__container--left');
+                    }
+
+                    container.append(
+                        $('<p/>').addClass('colour')
+                                .html('&nbsp;')
+                                .css('background', cell.colour)
+                    );
+                }
+
+                rowDiv.append(cellDiv.append(container.append(content)));
+            });
+
+            $board.append(rowDiv);
+        });
+
+        /**
+         * Generate a player object
+         *
+         * @param {string} name
+         * @param {string} colour
+         * @return {{name: string, colour: string, money: number, cards: Array, titles: Array}}
+         */
+        function player(name, colour) {
+            return {
+                name,
+                colour,
+                money: 1500,
+                cards: [],
+                titles: []
+            };
+        }
+
+        const players = [
+            player('User', 'LemonChiffon'),
+            player('Computer', 'lavender'),
+        ];
+
+        players.forEach((el, i) => {
+            const playerDiv = $('<div/>').addClass('player')
+                                        .css('background', el.colour);
+
+            playerDiv.append(
+                $('<p/>').html(el.name)
+            ).css('bottom', (i * 25) + 'px');
+
+            $('#cell_0').find('.cell__container').append(playerDiv);
+        });
+    </script>
+</body>
+</html>
